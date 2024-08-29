@@ -21,10 +21,13 @@ function IVCNotesComponent() {
 
 
   useEffect(() => {
-    if (isLoaded) {
-      initializeIVCNotes();
+    let getK = async () => {
+      if (!isLoaded) {
+        await initializeIVCNotes();
+      }
     }
-  }, [isLoaded]);
+    getK()
+  }, [!isLoaded]);
 
   if (error) {
     return <div>Error loading WASM module: {error.message}</div>;
@@ -38,6 +41,7 @@ function IVCNotesComponent() {
   const initializeIVCNotes = async () => {
     try {
       const newIvcNotes = await loadG16Files('../../keys/pk.g16', '../../keys/vk.g16');
+      console.log(newIvcNotes);
       setIvcNotes(newIvcNotes);
       console.log('IVCNotes initialized successfully');
     } catch (err) {
