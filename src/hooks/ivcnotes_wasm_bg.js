@@ -288,12 +288,30 @@ export class WasmAuth {
     */
     static from_js(value) {
         try {
+            console.log("Input value:", value);
+            
+            // Check if the input is a wrapped object and extract the pointer if it is
+            const ptr = (typeof value === 'object' && value !== null && '__wbg_ptr' in value) 
+                ? value.__wbg_ptr 
+                : value;
+            
+            console.log("Extracted pointer:", ptr);
+
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.wasmauth_from_js(retptr, addHeapObject(value));
+            console.log("retptr:", retptr);
+            
+            wasm.wasmauth_from_js(retptr, ptr);
+            
             var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
             var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
             var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+            
+            console.log("r0:", r0);
+            console.log("r1:", r1);
+            console.log("r2:", r2);
+            
             if (r2) {
+                console.error("Error in from_js:", takeObject(r1));
                 throw takeObject(r1);
             }
             return WasmNoteHistory.__wrap(r0);
@@ -423,6 +441,7 @@ export class WasmIVCNotes {
     issue(auth, receiver, value) {
         console.log(auth, receiver, value);
         auth = WasmAuth.from_js(auth);
+        console.log('made it here');
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
             _assertClass(auth, WasmAuth);

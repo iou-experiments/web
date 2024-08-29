@@ -50,7 +50,6 @@ function IVCNotesComponent() {
     try {
       const newAuth = await generateAuth();
       setAuth(newAuth);
-      createNewIVCNotes(newAuth)
       console.log('Generated auth:', authToJs(newAuth));
     } catch (err) {
       console.error('Error generating auth:', err);
