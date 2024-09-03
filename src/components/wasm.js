@@ -22,11 +22,12 @@ function IVCNotesComponent() {
   const [vkb, setVKB] = useState(null)
 
   useEffect(() => {
-    if (pkb && vkb) {
+    if (pkb && vkb && auth) {
+      console.log(pkb, vkb);
       const ivc = createNewIVCNotes(pkb, vkb)
       setIvcNotes(ivc);
     }
-  }, [pkb, vkb])
+  }, [pkb, vkb, auth])
 
   if (error) {
     return <div>Error loading WASM module: {error.message}</div>;

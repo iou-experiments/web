@@ -398,10 +398,11 @@ export class WasmIVCNotes {
     static new_unchecked(pk, vk) {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            const ptr0 = passArray8ToWasm0(pk, wasm.__wbindgen_malloc);
-            const len0 = WASM_VECTOR_LEN;
+
             const ptr1 = passArray8ToWasm0(vk, wasm.__wbindgen_malloc);
             const len1 = WASM_VECTOR_LEN;
+            const ptr0 = passArray8ToWasm0(pk, wasm.__wbindgen_malloc);
+            const len0 = WASM_VECTOR_LEN;
             wasm.wasmivcnotes_new_unchecked(retptr, ptr0, len0, ptr1, len1);
             var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
             var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
@@ -410,7 +411,12 @@ export class WasmIVCNotes {
                 throw takeObject(r1);
             }
             return WasmIVCNotes.__wrap(r0);
-        } finally {
+        } catch (e) {
+            console.log('12', e);
+            throw(e)
+        } 
+        
+        finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
         }
     }

@@ -27,20 +27,20 @@ export function useIVCNotes() {
     initWasm();
   }, []);
 
-  useEffect(() => {
-    if (isLoaded) {
-      setIvcNotes(new WasmIVCNotes());
-      console.log(ivcNotes);
-    }
-  }, [isLoaded]);
+  // useEffect(() => {
+  //   if (isLoaded) {
+  //     setIvcNotes(new WasmIVCNotes());
+  //     console.log(ivcNotes);
+  //   }
+  // }, [isLoaded]);
 
 
   const generateAuth = (username) => {
     if (!isLoaded) {
       throw new Error('WASM module not loaded');
     }
+
     const auth = WasmIVCNotes.generate_auth();
-    
     // Store the auth in local storage
     const storedAuths = JSON.parse(localStorage.getItem('iouAuths')) || [];
     storedAuths.push({ username, auth });
@@ -84,15 +84,13 @@ export function useIVCNotes() {
     return newNoteHistory;
   };
   const createNewIVCNotes = (pk, vk) => {
-    console.log(pk, vk, 'here')
     if (!isLoaded) {
       console.log(pk, vk);
       throw new Error('WASM module not loaded');
     }
     try {
-      console.log('h')
-      const newIvc = WasmIVCNotes.new(pk, vk);
-      return newIvc;
+      // const newIvc = WasmIVCNotes.new(pk, vk);
+      // return newIvc;
     } catch (e) {
       console.log('Error creating new IVCNotes:', e);
       throw e;
