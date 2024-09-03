@@ -90,6 +90,7 @@ export function useIVCNotes() {
     }
     try {
       const newIvc = WasmIVCNotes.new_unchecked(pk, vk);
+      setIvcNotes(newIvc);
       return newIvc;
     } catch (e) {
       console.log('Error creating new IVCNotes:', e);
