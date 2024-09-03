@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useIVCNotes } from '../hooks/useWasm';
+import LargeFileReader from './LargeFileReader';
 
 function IVCNotesComponent() {
   const {
@@ -11,23 +12,21 @@ function IVCNotesComponent() {
     transferNote,
     verifyNote,
     authToJs,
-    loadG16Files,
     noteHistoryToJs,
   } = useIVCNotes();
 
   const [auth, setAuth] = useState(null);
   const [noteHistory, setNoteHistory] = useState(null);
   const [ivcNotes, setIvcNotes] = useState(null);
-
+  const [pkb, setPKB] = useState(null);
+  const [vkb, setVKB] = useState(null)
 
   useEffect(() => {
-    let getK = async () => {
-      if (!isLoaded) {
-        await initializeIVCNotes();
-      }
+    if (pkb && vkb) {
+      const ivc = createNewIVCNotes(pkb, vkb)
+      setIvcNotes(ivc);
     }
-    getK()
-  }, [!isLoaded]);
+  }, [pkb, vkb])
 
   if (error) {
     return <div>Error loading WASM module: {error.message}</div>;
@@ -37,23 +36,10 @@ function IVCNotesComponent() {
     return <div>Loading WASM module...</div>;
   }
 
-
-  const initializeIVCNotes = async () => {
-    try {
-      const newIvcNotes = await loadG16Files('../../keys/pk.g16', '../../keys/vk.g16');
-      console.log(newIvcNotes);
-      setIvcNotes(newIvcNotes);
-      console.log('IVCNotes initialized successfully');
-    } catch (err) {
-      console.error('Error initializing IVCNotes:', err);
-    }
-  };
-
-
   const handleGenerateAuth = async () => {
     try {
       const newAuth = await generateAuth();
-      setAuth(newAuth);
+      setAuth(authToJs(newAuth));
       console.log('Generated auth:', authToJs(newAuth));
     } catch (err) {
       console.error('Error generating auth:', err);
@@ -80,7 +66,7 @@ function IVCNotesComponent() {
       return;
     }
     try {
-      const transferOutput = transferNote(auth, noteHistory, 'new_receiver_address', 50);
+      const transferOutput = transferNote(auth, noteHistory, '8e2bb3f867e21518954645afa35000d37d029be0c99f95832700f5e32645d12b', 50);
       console.log('Transfer output:', transferOutput);
       // You might want to update noteHistory here based on the transfer output
     } catch (err) {
@@ -104,6 +90,8 @@ function IVCNotesComponent() {
   return (
     <div>
       <h1>IVC Notes Operations</h1>
+      <LargeFileReader filePath="/keys/pk.bin" setData={setPKB} />
+      <LargeFileReader filePath="/keys/vk.bin" setData={setVKB} />
       <button onClick={handleGenerateAuth}>Generate Auth</button>
       <button onClick={handleIssueNote}>Issue Note</button>
       <button onClick={handleTransferNote}>Transfer Note</button>

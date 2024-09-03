@@ -9,9 +9,10 @@ function App() {
 
   return (
     <div className="App">
-      {
-        view === 'Register' ? <RegisterPage /> : <IVCNotesComponent />
-      }
+      {/* {
+        view === 'Register' ? <RegisterPage setRegistered={setView} /> :  <IVCNotesComponent />
+      } */}
+       <IVCNotesComponent />
     </div>
   );
 }

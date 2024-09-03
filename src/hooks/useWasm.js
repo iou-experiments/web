@@ -30,25 +30,10 @@ export function useIVCNotes() {
   useEffect(() => {
     if (isLoaded) {
       setIvcNotes(new WasmIVCNotes());
+      console.log(ivcNotes);
     }
   }, [isLoaded]);
 
-  const loadG16Files = async (pkPath, vkPath) => {
-
-    try {
-      const pkResponse = await fetch(pkPath);
-      const vkResponse = await fetch(vkPath);
-      const pkBuffer = await pkResponse.arrayBuffer();
-      const vkBuffer = await vkResponse.arrayBuffer();
-      const pk = new Uint8ClampedArray(pkBuffer);
-      const vk = new Uint8ClampedArray(vkBuffer);
-      console.log(pk,vk)
-      return createNewIVCNotes(pk, vk);
-    } catch (error) {
-      console.error('Error loading G16 files:', error);
-      throw error;
-    }
-  };
 
   const generateAuth = (username) => {
     if (!isLoaded) {
@@ -69,11 +54,14 @@ export function useIVCNotes() {
       throw new Error('IVCNotes not initialized');
     }
     try {
-      const noteHistory = ivcNotes.issue(auth, receiver, value);
-      
+      const authjs = WasmAuth.from_js(auth)
+      const noteHistory = ivcNotes.issue(authjs, '8e2bb3f867e21518954645afa35000d37d029be0c99f95832700f5e32645d12b', value);
+      console.log('1')
       // Store the issued note in local storage
       const issuedNotes = JSON.parse(localStorage.getItem('issuedNotes')) || [];
-      issuedNotes.push({ auth, receiver, value, noteHistory });
+      console.log('2')
+      issuedNotes.push({ auth: authjs, receiver, value, noteHistory });
+      console.log('3')
       localStorage.setItem('issuedNotes', JSON.stringify(issuedNotes));
       
       return noteHistory;
@@ -103,7 +91,8 @@ export function useIVCNotes() {
     }
     try {
       console.log('h')
-      return WasmIVCNotes.new_unchecked(pk, vk);
+      const newIvc = WasmIVCNotes.new(pk, vk);
+      return newIvc;
     } catch (e) {
       console.log('Error creating new IVCNotes:', e);
       throw e;
@@ -156,7 +145,6 @@ export function useIVCNotes() {
     generateAuth,
     createNewIVCNotes,
     issueNote,
-    loadG16Files,
     transferNote,
     verifyNote,
     authToJs,

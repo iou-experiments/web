@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useIVCNotes } from '../hooks/useWasm'; // Assuming this is the hook you provided earlier
 
-export default function RegisterPage() {
+export default function RegisterPage(setRegistered) {
   const [storedAuths, setStoredAuths] = useState([]);
   const [newUsername, setNewUsername] = useState('');
   const [ivcNotes, setIvcNotes] = useState();
+
   const {
     isLoaded,
     error,
@@ -55,6 +56,7 @@ export default function RegisterPage() {
       localStorage.setItem('iouAuths', JSON.stringify(updatedAuths));
       setStoredAuths(updatedAuths);
       setNewUsername('');
+      setRegistered('Issue')
     }
   };
 
