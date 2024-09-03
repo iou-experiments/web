@@ -89,8 +89,8 @@ export function useIVCNotes() {
       throw new Error('WASM module not loaded');
     }
     try {
-      // const newIvc = WasmIVCNotes.new(pk, vk);
-      // return newIvc;
+      const newIvc = WasmIVCNotes.new_unchecked(pk, vk);
+      return newIvc;
     } catch (e) {
       console.log('Error creating new IVCNotes:', e);
       throw e;
