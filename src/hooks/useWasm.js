@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import init, { WasmIVCNotes, WasmAuth, WasmNoteHistory, initSync } from './ivcnotes_wasm_bg.js';
+import { useState, useEffect, useCallback } from 'react';
+import init, { WasmIVCNotes, WasmAuth, initSync } from './ivcnotes_wasm_bg.js';
 
 const STORAGE_KEYS = {
   AUTH: 'ivcnotes_auth',
@@ -8,118 +8,27 @@ const STORAGE_KEYS = {
 };
 
 export function useIVCNotes() {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [error, setError] = useState(null);
-  const [ivcNotes, setIvcNotes] = useState(null);
+  const [state, setState] = useState({
+    isLoaded: false,
+    error: null,
+    ivcNotes: null,
+  });
 
   useEffect(() => {
     async function initWasm() {
       try {
         await init();
         await initSync();
-        console.log('success')
-        setIsLoaded(true);
+        setState(prevState => ({ ...prevState, isLoaded: true }));
       } catch (err) {
         console.error('Failed to initialize WASM module:', err);
-        setError(err);
+        setState(prevState => ({ ...prevState, error: err }));
       }
     }
     initWasm();
   }, []);
 
-  // useEffect(() => {
-  //   if (isLoaded) {
-  //     setIvcNotes(new WasmIVCNotes());
-  //     console.log(ivcNotes);
-  //   }
-  // }, [isLoaded]);
-
-
-  const generateAuth = (username) => {
-    if (!isLoaded) {
-      throw new Error('WASM module not loaded');
-    }
-
-    const auth = WasmIVCNotes.generate_auth();
-    // Store the auth in local storage
-    const storedAuths = JSON.parse(localStorage.getItem('iouAuths')) || [];
-    storedAuths.push({ username, auth });
-    localStorage.setItem('iouAuths', JSON.stringify(storedAuths));
-    
-    return auth;
-  };
-
-  const issueNote = (auth, receiver, value) => {
-    if (!ivcNotes) {
-      throw new Error('IVCNotes not initialized');
-    }
-    try {
-      const authjs = WasmAuth.from_js(auth)
-      const noteHistory = ivcNotes.issue(authjs, '8e2bb3f867e21518954645afa35000d37d029be0c99f95832700f5e32645d12b', value);
-      console.log('1')
-      // Store the issued note in local storage
-      const issuedNotes = JSON.parse(localStorage.getItem('issuedNotes')) || [];
-      console.log('2')
-      issuedNotes.push({ auth: authjs, receiver, value, noteHistory });
-      console.log('3')
-      localStorage.setItem('issuedNotes', JSON.stringify(issuedNotes));
-      
-      return noteHistory;
-    } catch (e) {
-      console.log('e', e);
-    }
-  };
-
-  const transferNote = (auth, noteHistory, receiver, value) => {
-    if (!ivcNotes) {
-      throw new Error('IVCNotes not initialized');
-    }
-    const newNoteHistory = ivcNotes.transfer(auth, noteHistory, receiver, value);
-    
-    // Store the transferred note in local storage
-    const transferredNotes = JSON.parse(localStorage.getItem('transferredNotes')) || [];
-    transferredNotes.push({ auth, noteHistory: newNoteHistory, receiver, value });
-    localStorage.setItem('transferredNotes', JSON.stringify(transferredNotes));
-    
-    return newNoteHistory;
-  };
-  const createNewIVCNotes = (pk, vk) => {
-    if (!isLoaded) {
-      console.log(pk, vk);
-      throw new Error('WASM module not loaded');
-    }
-    try {
-      const newIvc = WasmIVCNotes.new_unchecked(pk, vk);
-      setIvcNotes(newIvc);
-      return newIvc;
-    } catch (e) {
-      console.log('Error creating new IVCNotes:', e);
-      throw e;
-    }
-  };
-
-  const verifyNote = (noteHistory) => {
-    if (!ivcNotes) {
-      throw new Error('IVCNotes not initialized');
-    }
-    return ivcNotes.verify(noteHistory);
-  };
-
-  const authToJs = (auth) => {
-    if (!isLoaded) {
-      throw new Error('WASM module not loaded');
-    }
-    return auth.as_js();
-  };
-
-  const noteHistoryToJs = (noteHistory) => {
-    if (!isLoaded) {
-      throw new Error('WASM module not loaded');
-    }
-    return noteHistory.as_js();
-  };
-
-  const saveToLocalStorage = (key, data) => {
+  const saveToLocalStorage = useCallback((key, data) => {
     try {
       const existingData = JSON.parse(localStorage.getItem(key) || '[]');
       existingData.push(data);
@@ -127,20 +36,77 @@ export function useIVCNotes() {
     } catch (e) {
       console.error(`Error saving to localStorage (${key}):`, e);
     }
-  };
+  }, []);
 
-  const getFromLocalStorage = (key) => {
+  const getFromLocalStorage = useCallback((key) => {
     try {
       return JSON.parse(localStorage.getItem(key) || '[]');
     } catch (e) {
       console.error(`Error reading from localStorage (${key}):`, e);
       return [];
     }
-  };
+  }, []);
+
+  const generateAuth = useCallback((username) => {
+    if (!state.isLoaded) throw new Error('WASM module not loaded');
+
+    const auth = WasmIVCNotes.generate_auth();
+    saveToLocalStorage(STORAGE_KEYS.AUTH, { username, auth });
+    return auth;
+  }, [state.isLoaded, saveToLocalStorage]);
+
+  const createNewIVCNotes = useCallback((pk, vk) => {
+    if (!state.isLoaded) throw new Error('WASM module not loaded');
+
+    try {
+      const newIvc = WasmIVCNotes.new_unchecked(pk, vk);
+      setState(prevState => ({ ...prevState, ivcNotes: newIvc }));
+      return newIvc;
+    } catch (e) {
+      console.error('Error creating new IVCNotes:', e);
+      throw e;
+    }
+  }, [state.isLoaded]);
+
+  const issueNote = useCallback((auth, receiver, value) => {
+    if (!state.ivcNotes) throw new Error('IVCNotes not initialized');
+
+    try {
+      const authjs = WasmAuth.from_js(auth);
+      const noteHistory = state.ivcNotes.issue(authjs, '8e2bb3f867e21518954645afa35000d37d029be0c99f95832700f5e32645d12b', value);
+      saveToLocalStorage(STORAGE_KEYS.ISSUED_NOTES, { auth: authjs, receiver, value, noteHistory });
+      return noteHistory;
+    } catch (e) {
+      console.error('Error issuing note:', e);
+      throw e;
+    }
+  }, [state.ivcNotes, saveToLocalStorage]);
+
+  const transferNote = useCallback((auth, noteHistory, receiver, value) => {
+    if (!state.ivcNotes) throw new Error('IVCNotes not initialized');
+
+    const newNoteHistory = state.ivcNotes.transfer(auth, noteHistory, receiver, value);
+    saveToLocalStorage(STORAGE_KEYS.TRANSFERRED_NOTES, { auth, noteHistory: newNoteHistory, receiver, value });
+    return newNoteHistory;
+  }, [state.ivcNotes, saveToLocalStorage]);
+
+  const verifyNote = useCallback((noteHistory) => {
+    if (!state.ivcNotes) throw new Error('IVCNotes not initialized');
+    return state.ivcNotes.verify(noteHistory);
+  }, [state.ivcNotes]);
+
+  const authToJs = useCallback((auth) => {
+    if (!state.isLoaded) throw new Error('WASM module not loaded');
+    return auth.as_js();
+  }, [state.isLoaded]);
+
+  const noteHistoryToJs = useCallback((noteHistory) => {
+    if (!state.isLoaded) throw new Error('WASM module not loaded');
+    return noteHistory.as_js();
+  }, [state.isLoaded]);
 
   return {
-    isLoaded,
-    error,
+    ...state,
     generateAuth,
     createNewIVCNotes,
     issueNote,
