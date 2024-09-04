@@ -1,0 +1,6 @@
+{
+  "compilerOptions": {
+    // ... existing configuration options ...
+    "jsx": "react"
+  }
+}

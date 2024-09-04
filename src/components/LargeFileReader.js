@@ -67,9 +67,6 @@ function LargeFileReader({ filePath, setData }) {
 
   return (
     <div>
-      <h2>File Content Loaded</h2>
-      <p>File size: {fileContent.length} bytes</p>
-      <p>First 100 bytes: {Array.from(fileContent.slice(0, 100)).map(b => b.toString(16).padStart(2, '0')).join(' ')}</p>
       {/* Add more processing or display logic here */}
     </div>
   );
